@@ -1,11 +1,12 @@
 #!/usr/bin/python3
-from datetime import datetime
 import argparse
+from datetime import datetime
 import yaml
 from yaml import Loader, Dumper
 
 argsp = argparse.ArgumentParser(prog="crops")
-argsp.add_argument_group()
+argsp.add_argument('-v', action='store_true')
+
 subp = argsp.add_subparsers(dest="command")
 newp = subp.add_parser('new')
 
@@ -23,12 +24,7 @@ feedp.add_argument('-n', '--notes', type=str)
 stagep = subp.add_parser('stage')
 stagep.add_argument('stage', choices=["emerging", "vegetation", "reproduction", "harvested"])
 
-argsp.add_argument("crop", type=str, nargs='+')
-argsp.add_argument("-v", action='store_true')
-
-
-args = argsp.parse_args()
-
+args, files = argsp.parse_known_args()
 
 FILE_INFO, FILE_EVENTS = 0, 1
 VERBOSE = args.v
@@ -37,7 +33,8 @@ def vprint(*args):
     if VERBOSE: print('[crops]', *args)
 
 vprint('command:', args.command)
-vprint('crops:', args.crop)
+vprint('crops:', files)
+assert(len(files) > 0)
 
 if args.command == 'new':
     pass
@@ -46,7 +43,7 @@ else:
     now_date = now.date()
     now_time = now.time()
     now_str = now.strftime(r'%Y-%m-%d %H:%M')
-    for crop in args.crop:
+    for crop in files:
         crop_data = list(yaml.safe_load_all(open(crop)))
         info_data = crop_data[FILE_INFO]
         events_data :dict = crop_data[FILE_EVENTS]
@@ -91,7 +88,10 @@ else:
                     print("{} was never watered.".format(info_data['name']))
                 else:
                     diff = now_date - water_date
-                    print("{} was watered {} days ago.".format(info_data['name'], diff.days))
+                    if diff.days > 0:
+                        print("{} was watered {} days ago.".format(info_data['name'], diff.days))
+                    else:
+                        print("{} was watered today.".format(info_data['name'], diff.days))
             if no_command:
                 print("== Crop Info ==")
                 print(yaml.safe_dump(info_data, sort_keys=False))
