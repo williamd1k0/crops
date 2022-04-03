@@ -1,8 +1,15 @@
 #!/usr/bin/python3
+import sys, os
 import argparse
+import gettext
 from datetime import datetime
 import yaml
 from yaml import Loader, Dumper
+
+locales_dir = os.path.realpath(sys.argv[0]).replace('/src/crops.py', '/locales')
+lang_translations = gettext.translation('base', localedir=locales_dir)
+lang_translations.install()
+_ = lang_translations.gettext
 
 argsp = argparse.ArgumentParser(prog="crops")
 argsp.add_argument('-v', action='store_true')
@@ -45,7 +52,7 @@ else:
     now_str = now.strftime(r'%Y-%m-%d %H:%M')
     for crop in files:
         crop_data = list(yaml.safe_load_all(open(crop)))
-        info_data = crop_data[FILE_INFO]
+        info_data :dict = crop_data[FILE_INFO]
         events_data :dict = crop_data[FILE_EVENTS]
         vprint(info_data)
         vprint(events_data)
@@ -67,7 +74,7 @@ else:
                 if stage is None:
                     stage = 'planted'
                     stage_date = info_data['planted']
-                print('Current {} stage: {} (since {}).'.format(info_data['name'], stage, stage_date.strftime(r'%Y-%m-%d %H:%M')))
+                print(_('Current {0} stage: {1} (since {2}).').format(info_data['name'], stage, stage_date.strftime(r'%Y-%m-%d %H:%M')))
             if args.water:
                 no_command = False
                 water = None
@@ -85,13 +92,13 @@ else:
                         if water is not None: break
                     if water is not None: break
                 if water is None:
-                    print("{} was never watered.".format(info_data['name']))
+                    print(_("{} was never watered.").format(info_data['name']))
                 else:
                     diff = now_date - water_date
                     if diff.days > 0:
-                        print("{} was watered {} days ago.".format(info_data['name'], diff.days))
+                        print(_("{0} was watered {1} days ago.").format(info_data['name'], diff.days))
                     else:
-                        print("{} was watered today.".format(info_data['name'], diff.days))
+                        print(_("{0} was watered today.").format(info_data['name'], diff.days))
             if no_command:
                 print("== Crop Info ==")
                 print(yaml.safe_dump(info_data, sort_keys=False))
@@ -99,4 +106,4 @@ else:
                 print(yaml.safe_dump(events_data))
         elif args.command == 'stage':
             stage = args.stage
-            print('[{}] Stage of {} set to {}.'.format(now_str, info_data['name'], stage))
+            print(_('[{0}] Stage of {1} set to {2}.').format(now_str, info_data['name'], stage))
