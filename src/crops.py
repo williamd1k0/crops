@@ -17,6 +17,9 @@ waterp = subp.add_parser('water')
 waterp.add_argument('-a', '--additives', type=str)
 waterp.add_argument('-n', '--notes', type=str)
 
+feedp = subp.add_parser('feed')
+feedp.add_argument('-n', '--notes', type=str)
+
 stagep = subp.add_parser('stage')
 stagep.add_argument('stage', choices=["emerging", "vegetation", "reproduction", "harvested"])
 
@@ -77,6 +80,9 @@ else:
                         for event in events_data[date][time]:
                             if type(event) is dict and 'water' in event:
                                 water = event['water']
+                                water_date = date
+                            elif type(event) is str and event == 'water':
+                                water = event
                                 water_date = date
                             if water is not None: break
                         if water is not None: break
