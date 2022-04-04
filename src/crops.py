@@ -11,29 +11,8 @@ lang_translations = gettext.translation('base', localedir=locales_dir)
 lang_translations.install()
 _ = lang_translations.gettext
 
-argsp = argparse.ArgumentParser(prog="crops")
-argsp.add_argument('-v', action='store_true')
 
-subp = argsp.add_subparsers(dest="command")
-newp = subp.add_parser('new')
-
-showp = subp.add_parser('show')
-showp.add_argument('-s', '--stage', action='store_true')
-showp.add_argument('-w', '--water', action='store_true')
-
-waterp = subp.add_parser('water')
-waterp.add_argument('-a', '--additives', type=str, action='append')
-waterp.add_argument('-n', '--notes', type=str)
-
-feedp = subp.add_parser('feed')
-feedp.add_argument('-n', '--notes', type=str)
-
-stagep = subp.add_parser('stage')
-stagep.add_argument('stage', choices=["emerging", "vegetation", "reproduction", "harvested"])
-
-args, files = argsp.parse_known_args()
-
-VERBOSE = args.v
+VERBOSE = False
 
 def vprint(*args):
     if VERBOSE: print('[crops]', *args)
@@ -150,7 +129,7 @@ class CropsCommandProcessor(object):
             template = _("[{0}] Watering {1} with {2}.").format('{0}', '{1}', ', '.join(additives))
         if notes is not None:
             if entry_data is None:
-               entry_data  = { 'water': { 'notes': notes } }
+               entry_data = { 'water': { 'notes': notes } }
             else:
                 entry_data['water']['notes'] = notes
         if entry_data is None:
@@ -179,8 +158,32 @@ class CropsCommandProcessor(object):
         yaml.safe_dump_all(self.crop_data, open(self.current_file, 'w'), allow_unicode=True)
 
 if __name__ == '__main__':
+    argsp = argparse.ArgumentParser(prog="crops")
+    argsp.add_argument('-v', action='store_true')
+
+    subp = argsp.add_subparsers(dest="command")
+    newp = subp.add_parser('new')
+
+    showp = subp.add_parser('show')
+    showp.add_argument('-s', '--stage', action='store_true')
+    showp.add_argument('-w', '--water', action='store_true')
+
+    waterp = subp.add_parser('water')
+    waterp.add_argument('-a', '--additives', type=str, action='append')
+    waterp.add_argument('-n', '--notes', type=str)
+
+    feedp = subp.add_parser('feed')
+    feedp.add_argument('-n', '--notes', type=str)
+
+    stagep = subp.add_parser('stage')
+    stagep.add_argument('stage', choices=["emerging", "vegetation", "reproduction", "harvested"])
+
+    args, files = argsp.parse_known_args()
+    VERBOSE = args.v
+
     vprint('command:', args.command)
     vprint('crops:', files)
+
     if len(files) <= 0:
         argsp.print_help()
     elif args.command == 'new':
