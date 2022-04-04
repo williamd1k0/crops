@@ -127,7 +127,7 @@ class CropsCommandProcessor(object):
                     if water is not None: break
                 if water is not None: break
             if water is None:
-                print(_("{} was never watered.").format(info_data['name']))
+                print(_("{0} was never watered.").format(info_data['name']))
             else:
                 diff = self.now_date - water_date
                 if diff.days > 0:
