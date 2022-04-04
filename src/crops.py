@@ -22,7 +22,7 @@ showp.add_argument('-s', '--stage', action='store_true')
 showp.add_argument('-w', '--water', action='store_true')
 
 waterp = subp.add_parser('water')
-waterp.add_argument('-a', '--additives', type=str, nargs='+')
+waterp.add_argument('-a', '--additives', type=str, action='append')
 waterp.add_argument('-n', '--notes', type=str)
 
 feedp = subp.add_parser('feed')
@@ -57,8 +57,10 @@ class CropsCommandProcessor(object):
             self.show_info(self.args.water, self.args.stage)
         elif self.args.command == 'water':
             self.water(self.args.additives, self.args.notes)
+            self.save_changes()
         elif self.args.command == 'stage':
             self.change_stage(self.args.stage)
+            self.save_changes()
 
     @property
     def now_date(self):
@@ -71,6 +73,10 @@ class CropsCommandProcessor(object):
     @property
     def now_formatted(self):
         return self.now.strftime(r'%Y-%m-%d %H:%M')
+    
+    @property
+    def now_time_formatted(self):
+        return self.now.strftime(r'%Hh%M')
     
     def load_crop_data(self):
         self.crop_data = list(yaml.safe_load_all(open(self.current_file)))
@@ -138,14 +144,39 @@ class CropsCommandProcessor(object):
     def water(self, additives=None, notes=None):
         info_data = self.crop_info
         template = _("[{0}] Watering {1}.")
+        entry_data = None
         if additives is not None:
+            entry_data = { 'water': { 'additives': additives } }
             template = _("[{0}] Watering {1} with {2}.").format('{0}', '{1}', ', '.join(additives))
+        if notes is not None:
+            if entry_data is None:
+               entry_data  = { 'water': { 'notes': notes } }
+            else:
+                entry_data['water']['notes'] = notes
+        if entry_data is None:
+            entry_data = 'water'
+        self.add_entry(entry_data)
         print(template.format(self.now_formatted, info_data['name']))
 
     def change_stage(self, stage):
         info_data = self.crop_info
+        entry_data = { 'stage': stage }
+        self.add_entry(entry_data)
         print(_('[{0}] Stage of {1} set to {2}.').format(self.now_formatted, info_data['name'], stage))
 
+    def add_entry(self, data):
+        date_key = self.now_date
+        time_key = self.now_time_formatted
+        events = self.crop_events
+        if not date_key in events:
+            events[date_key] = {}
+        if not time_key in events[date_key]:
+            events[date_key][time_key] = []
+        now_events = events[date_key][time_key]
+        now_events.append(data)
+    
+    def save_changes(self):
+        yaml.safe_dump_all(self.crop_data, open(self.current_file, 'w'), allow_unicode=True)
 
 if __name__ == '__main__':
     vprint('command:', args.command)

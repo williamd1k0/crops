@@ -1,22 +1,25 @@
+cultivar: Mini Carrot
 name: Carrot
-cultivar: Mini Carrot # optional
+notes: Trying to grow carrots for the 159th time.
 planted: 2022-01-17 17:20:00
-plants: 6 # optional
-source: Seeds # optional
-notes: Trying to grow carrots for the 159th time. # optional
+plants: 6
+source: Seeds
 ---
 2022-02-24:
   13h30:
   - stage: vegetation
   13h50:
   - water:
-      additives: # optional
+      additives:
       - Vinegar
 2022-03-25:
   18h30:
   - water:
-      notes: Rain # optional
+      notes: Rain
   - stage: reproduction
 2022-04-01:
-  15:24:
+  15h24:
   - water
+2022-04-03:
+  21h53:
+  - stage: harvested
