@@ -176,7 +176,7 @@ if __name__ == '__main__':
     feedp.add_argument('-n', '--notes', type=str)
 
     stagep = subp.add_parser('stage')
-    stagep.add_argument('stage', choices=["emerging", "vegetation", "reproduction", "harvested"])
+    stagep.add_argument('stage', choices=["germination", "seedling", "cutting", "vegetation", "budding", "flowering", "ripening", "drying", "curing", "harvested"])
 
     args, files = argsp.parse_known_args()
     VERBOSE = args.v

@@ -16,7 +16,7 @@ source: Seeds
   18h30:
   - water:
       notes: Rain
-  - stage: reproduction
+  - stage: ripening
 2022-04-01:
   15h24:
   - water
