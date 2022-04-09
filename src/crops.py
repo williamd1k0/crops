@@ -18,7 +18,20 @@ def vprint(*args):
     if VERBOSE: print('[crops]', *args)
 
 def new_crop(args, output):
-    pass
+    crop_data = {
+        'name': 'Name',
+        'cultivar': 'Cultivar',
+        'notes': None,
+        'planted': datetime.now(),
+        'plants': 1,
+        'source': 'Seeds',
+    }
+    path = crop_data['name'].replace(' ', '') if output is None else output
+    path = (path+'.crop').replace('.crop.crop', '.crop')
+    if os.path.exists(path):
+        print("File already exists. Aborting!", file=sys.stderr)
+    else:
+        yaml.safe_dump(crop_data, open(path, 'w'), allow_unicode=True)
 
 class CropsCommandProcessor(object):
     FILE_INFO, FILE_EVENTS = 0, 1
@@ -192,10 +205,10 @@ if __name__ == '__main__':
     vprint('command:', args.command)
     vprint('crops:', files)
 
-    if len(files) <= 0:
+    if args.command == 'new':
+        new_crop(args, files[0] if len(files) > 0 else None)
+    elif len(files) <= 0:
         argsp.print_help()
-    elif args.command == 'new':
-        pass
     else:
         command_processor = CropsCommandProcessor(args)
         for crop in files:
