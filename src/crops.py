@@ -59,6 +59,11 @@ class CropsCommandProcessor(object):
     
     def load_crop_data(self):
         self.crop_data = list(yaml.safe_load_all(open(self.current_file)))
+        # NOTE: Init an empty event dict to avoid AttributeError (saving changes is not needed)
+        if len(self.crop_data) == 1:
+            self.crop_data.append({})
+        elif self.crop_data[self.FILE_EVENTS] is None:
+            self.crop_data[self.FILE_EVENTS] = {}
 
     @property
     def crop_info(self):
@@ -118,8 +123,11 @@ class CropsCommandProcessor(object):
             print("== Crop Info ==")
             print(yaml.safe_dump(info_data, sort_keys=False))
             print("==Crop Events==")
-            print(yaml.safe_dump(events_data))
-    
+            if len(events_data) > 0:
+                print(yaml.safe_dump(events_data))
+            else:
+                print(_("No events added yet."))
+
     def water(self, additives=None, notes=None):
         info_data = self.crop_info
         template = _("[{0}] Watering {1}.")
