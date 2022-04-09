@@ -43,18 +43,17 @@ def new_crop(args, output):
         'source': result[RESULT_SRC][1],
         'notes': None if result[RESULT_NOTES][1] == _("optional") else result[RESULT_NOTES][1]
     }
-    crop_events = None
+    new_stage = None
     if result[RESULT_STAGE][1] != _("planted"):
-        print("TODO: Add stage event on initialisation")
+        new_stage = PLANT_STAGES[PLANT_STAGES_LC.index(result[RESULT_STAGE][1])]
     path = crop_data['name'].replace(' ', '') if output is None else output
     path = (path+'.crop').replace('.crop.crop', '.crop')
     if os.path.exists(path):
         print("File already exists. Aborting!", file=sys.stderr)
     else:
-        if crop_events is None:
-            yaml.safe_dump(crop_data, open(path, 'w'), allow_unicode=True)
-        else:
-            yaml.safe_dump_all([crop_data, crop_events], open(path, 'w'), allow_unicode=True)
+        yaml.safe_dump(crop_data, open(path, 'w'), allow_unicode=True)
+        if new_stage is not None:
+            main(['stage', new_stage, path])
         print("New crop saved to: "+path)
 
 
@@ -203,7 +202,7 @@ class CropsCommandProcessor(object):
     def save_changes(self):
         yaml.safe_dump_all(self.crop_data, open(self.current_file, 'w'), allow_unicode=True)
 
-if __name__ == '__main__':
+def main(argv):
     argsp = argparse.ArgumentParser(prog="crops")
     argsp.add_argument('-v', action='store_true')
 
@@ -224,7 +223,8 @@ if __name__ == '__main__':
     stagep = subp.add_parser('stage')
     stagep.add_argument('stage', choices=PLANT_STAGES[1:])
 
-    args, files = argsp.parse_known_args()
+    args, files = argsp.parse_known_args(argv)
+    global VERBOSE
     VERBOSE = args.v
 
     vprint('command:', args.command)
@@ -238,3 +238,7 @@ if __name__ == '__main__':
         command_processor = CropsCommandProcessor(args)
         for crop in files:
             command_processor.execute(crop)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
