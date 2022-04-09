@@ -1,1 +1,2 @@
-pyyaml==6.0
+PyYAML==6.0 # crop data structure
+bullet==2.2.0 # crop creation prompts

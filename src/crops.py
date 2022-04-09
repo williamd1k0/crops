@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 import sys, os
 import argparse
 import gettext
@@ -11,27 +11,52 @@ lang_translations = gettext.translation('base', localedir=locales_dir)
 lang_translations.install()
 _ = lang_translations.gettext
 
-
 VERBOSE = False
+PLANT_STAGES = ["planted", "germination", "seedling", "cutting", "vegetation", "budding", "flowering", "ripening", "drying", "curing", "harvested"]
+PLANT_STAGES_LC = [_("planted"), _("germination"), _("seedling"), _("cutting"), _("vegetation"), _("budding"), _("flowering"), _("ripening"), _("drying"), _("curing"), _("harvested")]
 
 def vprint(*args):
     if VERBOSE: print('[crops]', *args)
 
 def new_crop(args, output):
+    from bullet import VerticalPrompt, Input, Numbers, Bullet
+    PROMPT = ": "
+    RESULT_NAME, RESULT_NUM, RESULT_CULTIVAR, RESULT_STAGE, RESULT_SRC, RESULT_NOTES = range(6)
+    cli = VerticalPrompt(
+        [
+            Input(_("Plant name")+PROMPT),
+            Numbers(_("Number of plants")+PROMPT, type=int),
+            Input(_("Plant cultivar")+PROMPT, default=_("optional")),
+            Bullet(_("Initial stage"), choices=PLANT_STAGES_LC),
+            Input(_("Source")+PROMPT, default=_("seeds")),
+            Input(_("Notes")+PROMPT, default=_("optional")),
+        ],
+        spacing=1
+    )
+    result = cli.launch()
+
     crop_data = {
-        'name': 'Name',
-        'cultivar': 'Cultivar',
-        'notes': None,
+        'name': result[RESULT_NAME][1],
+        'plants': result[RESULT_NUM][1],
+        'cultivar': result[RESULT_CULTIVAR][1] if result[RESULT_CULTIVAR][1] != _("optional") else _("{0} (unknown)").format(result[RESULT_NAME][1]),
         'planted': datetime.now(),
-        'plants': 1,
-        'source': 'Seeds',
+        'source': result[RESULT_SRC][1],
+        'notes': None if result[RESULT_NOTES][1] == _("optional") else result[RESULT_NOTES][1]
     }
+    crop_events = None
+    if result[RESULT_STAGE][1] != _("planted"):
+        print("TODO: Add stage event on initialisation")
     path = crop_data['name'].replace(' ', '') if output is None else output
     path = (path+'.crop').replace('.crop.crop', '.crop')
     if os.path.exists(path):
         print("File already exists. Aborting!", file=sys.stderr)
     else:
-        yaml.safe_dump(crop_data, open(path, 'w'), allow_unicode=True)
+        if crop_events is None:
+            yaml.safe_dump(crop_data, open(path, 'w'), allow_unicode=True)
+        else:
+            yaml.safe_dump_all([crop_data, crop_events], open(path, 'w'), allow_unicode=True)
+        print("New crop saved to: "+path)
+
 
 class CropsCommandProcessor(object):
     FILE_INFO, FILE_EVENTS = 0, 1
@@ -197,7 +222,7 @@ if __name__ == '__main__':
     feedp.add_argument('-n', '--notes', type=str)
 
     stagep = subp.add_parser('stage')
-    stagep.add_argument('stage', choices=["germination", "seedling", "cutting", "vegetation", "budding", "flowering", "ripening", "drying", "curing", "harvested"])
+    stagep.add_argument('stage', choices=PLANT_STAGES[1:])
 
     args, files = argsp.parse_known_args()
     VERBOSE = args.v
