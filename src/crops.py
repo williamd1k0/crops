@@ -18,44 +18,6 @@ PLANT_STAGES_LC = [_("planted"), _("germination"), _("seedling"), _("cutting"), 
 def vprint(*args):
     if VERBOSE: print('[crops]', *args)
 
-def new_crop(args, output):
-    from bullet import VerticalPrompt, Input, Numbers, Bullet
-    PROMPT = ": "
-    RESULT_NAME, RESULT_NUM, RESULT_CULTIVAR, RESULT_STAGE, RESULT_SRC, RESULT_NOTES = range(6)
-    cli = VerticalPrompt(
-        [
-            Input(_("Plant name")+PROMPT),
-            Numbers(_("Number of plants")+PROMPT, type=int),
-            Input(_("Plant cultivar")+PROMPT, default=_("optional")),
-            Bullet(_("Initial stage"), choices=PLANT_STAGES_LC),
-            Input(_("Source")+PROMPT, default=_("seeds")),
-            Input(_("Notes")+PROMPT, default=_("optional")),
-        ],
-        spacing=1
-    )
-    result = cli.launch()
-
-    crop_data = {
-        'name': result[RESULT_NAME][1],
-        'plants': result[RESULT_NUM][1],
-        'cultivar': result[RESULT_CULTIVAR][1] if result[RESULT_CULTIVAR][1] != _("optional") else _("{0} (unknown)").format(result[RESULT_NAME][1]),
-        'planted': datetime.now(),
-        'source': result[RESULT_SRC][1],
-        'notes': None if result[RESULT_NOTES][1] == _("optional") else result[RESULT_NOTES][1]
-    }
-    new_stage = None
-    if result[RESULT_STAGE][1] != _("planted"):
-        new_stage = PLANT_STAGES[PLANT_STAGES_LC.index(result[RESULT_STAGE][1])]
-    path = crop_data['name'].replace(' ', '') if output is None else output
-    path = (path+'.crop').replace('.crop.crop', '.crop')
-    if os.path.exists(path):
-        print("File already exists. Aborting!", file=sys.stderr)
-    else:
-        yaml.safe_dump(crop_data, open(path, 'w'), allow_unicode=True)
-        if new_stage is not None:
-            main(['stage', new_stage, path])
-        print("New crop saved to: "+path)
-
 
 class CropsCommandProcessor(object):
     FILE_INFO, FILE_EVENTS = 0, 1
@@ -210,29 +172,68 @@ class CropsCommandProcessor(object):
     def save_changes(self):
         yaml.safe_dump_all(self.crop_data, open(self.current_file, 'w'), allow_unicode=True)
 
+
+def new_crop(args, output):
+    from bullet import VerticalPrompt, Input, Numbers, Bullet
+    PROMPT = ": "
+    RESULT_NAME, RESULT_NUM, RESULT_CULTIVAR, RESULT_STAGE, RESULT_SRC, RESULT_NOTES = range(6)
+    cli = VerticalPrompt(
+        [
+            Input(_("Plant name")+PROMPT),
+            Numbers(_("Number of plants")+PROMPT, type=int),
+            Input(_("Plant cultivar")+PROMPT, default=_("optional")),
+            Bullet(_("Initial stage"), choices=PLANT_STAGES_LC),
+            Input(_("Source")+PROMPT, default=_("seeds")),
+            Input(_("Notes")+PROMPT, default=_("optional")),
+        ],
+        spacing=1
+    )
+    result = cli.launch()
+
+    crop_data = {
+        'name': result[RESULT_NAME][1],
+        'plants': result[RESULT_NUM][1],
+        'cultivar': result[RESULT_CULTIVAR][1] if result[RESULT_CULTIVAR][1] != _("optional") else _("{0} (unknown)").format(result[RESULT_NAME][1]),
+        'planted': datetime.now(),
+        'source': result[RESULT_SRC][1],
+        'notes': None if result[RESULT_NOTES][1] == _("optional") else result[RESULT_NOTES][1]
+    }
+    new_stage = None
+    if result[RESULT_STAGE][1] != _("planted"):
+        new_stage = PLANT_STAGES[PLANT_STAGES_LC.index(result[RESULT_STAGE][1])]
+    path = crop_data['name'].replace(' ', '') if output is None else output
+    path = (path+'.crop').replace('.crop.crop', '.crop')
+    if os.path.exists(path):
+        print("File already exists. Aborting!", file=sys.stderr)
+    else:
+        yaml.safe_dump(crop_data, open(path, 'w'), allow_unicode=True)
+        if new_stage is not None:
+            main(['stage', new_stage, path])
+        print("New crop saved to: "+path)
+
 def main(argv):
-    argsp = argparse.ArgumentParser(prog="crops")
-    argsp.add_argument('-v', action='store_true')
+    args_parser = argparse.ArgumentParser(prog="crops")
+    args_parser.add_argument('-v', action='store_true')
 
-    subp = argsp.add_subparsers(dest="command")
-    newp = subp.add_parser('new')
+    sub_parser = args_parser.add_subparsers(dest="command")
+    new_args = sub_parser.add_parser('new')
 
-    infop = subp.add_parser('info')
-    infop.add_argument('-s', '--stage', action='store_true')
-    infop.add_argument('-w', '--water', action='store_true')
-    infop.add_argument('-a', '--age', action='store_true')
+    info_args = sub_parser.add_parser('info')
+    info_args.add_argument('-s', '--stage', action='store_true')
+    info_args.add_argument('-w', '--water', action='store_true')
+    info_args.add_argument('-a', '--age', action='store_true')
 
-    waterp = subp.add_parser('water')
-    waterp.add_argument('-a', '--additives', type=str, action='append')
-    waterp.add_argument('-n', '--notes', type=str)
+    water_args = sub_parser.add_parser('water')
+    water_args.add_argument('-a', '--additives', type=str, action='append')
+    water_args.add_argument('-n', '--notes', type=str)
 
-    feedp = subp.add_parser('feed')
-    feedp.add_argument('-n', '--notes', type=str)
+    feed_args = sub_parser.add_parser('feed')
+    feed_args.add_argument('-n', '--notes', type=str)
 
-    stagep = subp.add_parser('stage')
-    stagep.add_argument('stage', choices=PLANT_STAGES[1:])
+    stage_args = sub_parser.add_parser('stage')
+    stage_args.add_argument('stage', choices=PLANT_STAGES[1:])
 
-    args, files = argsp.parse_known_args(argv)
+    args, files = args_parser.parse_known_args(argv)
     global VERBOSE
     VERBOSE = args.v
 
@@ -242,7 +243,7 @@ def main(argv):
     if args.command == 'new':
         new_crop(args, files[0] if len(files) > 0 else None)
     elif len(files) <= 0:
-        argsp.print_help()
+        args_parser.print_help()
     else:
         command_processor = CropsCommandProcessor(args)
         for crop in files:
