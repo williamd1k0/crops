@@ -2,7 +2,7 @@
 import sys, os
 import argparse
 import gettext
-from datetime import datetime
+from datetime import date, datetime
 import yaml
 from yaml import Loader, Dumper
 
@@ -70,7 +70,7 @@ class CropsCommandProcessor(object):
         self.current_file = file
         self.load_crop_data()
         if self.args.command == 'show':
-            self.show_info(self.args.water, self.args.stage)
+            self.show_info(self.args.water, self.args.stage, self.args.age)
         elif self.args.command == 'water':
             self.water(self.args.additives, self.args.notes)
             self.save_changes()
@@ -110,7 +110,7 @@ class CropsCommandProcessor(object):
     def crop_events(self):
         return self.crop_data[self.FILE_EVENTS]
 
-    def show_info(self, show_water=False, show_stage=False):
+    def show_info(self, show_water=False, show_stage=False, show_age=False):
         no_command = True
         events_data = self.crop_events
         info_data = self.crop_info
@@ -118,32 +118,34 @@ class CropsCommandProcessor(object):
             no_command = False
             stage = None
             stage_date = None
-            for date in reversed(events_data.keys()):
-                for time in reversed(events_data[date].keys()):
-                    for event in events_data[date][time]:
+            for event_date in reversed(events_data.keys()):
+                for event_time in reversed(events_data[event_date].keys()):
+                    for event in events_data[event_date][event_time]:
                         if type(event) is dict and 'stage' in event:
                             stage = event['stage']
-                            stage_date = date
+                            stage_date = event_date
                         if stage is not None: break
                     if stage is not None: break
                 if stage is not None: break
             if stage is None:
                 stage = 'planted'
                 stage_date = info_data['planted']
-            print(_('Current {0} stage: {1} (since {2}).').format(info_data['name'], stage, stage_date.strftime(r'%Y-%m-%d %H:%M')))
+            stage_date = stage_date if type(stage_date) == date else stage_date.date()
+            diff = self.now_date - stage_date
+            print(_('Current {0} stage: {1} (since {2}, {3} days ago).').format(info_data['name'], stage, stage_date.strftime(r'%Y-%m-%d'), diff.days))
         if show_water:
             no_command = False
             water = None
             water_date = None
-            for date in reversed(events_data.keys()):
-                for time in reversed(events_data[date].keys()):
-                    for event in events_data[date][time]:
+            for event_date in reversed(events_data.keys()):
+                for event_time in reversed(events_data[event_date].keys()):
+                    for event in events_data[event_date][event_time]:
                         if type(event) is dict and 'water' in event:
                             water = event['water']
-                            water_date = date
+                            water_date = event_date
                         elif type(event) is str and event == 'water':
                             water = event
-                            water_date = date
+                            water_date = event_date
                         if water is not None: break
                     if water is not None: break
                 if water is not None: break
@@ -152,9 +154,15 @@ class CropsCommandProcessor(object):
             else:
                 diff = self.now_date - water_date
                 if diff.days > 0:
-                    print(_("{0} was watered {1} days ago.").format(info_data['name'], diff.days))
+                    print(_("{0} was watered {1}, {2} days ago.").format(info_data['name'], water_date.strftime('%d %B (%a)'), abs(diff.days)))
                 else:
                     print(_("{0} was watered today.").format(info_data['name'], diff.days))
+        if show_age:
+            no_command = False
+            planted_date = info_data['planted']
+            planted_date = planted_date if type(planted_date) == date else planted_date.date()
+            diff = self.now_date - planted_date
+            print(_("{0} has been planted for {1} days.").format(info_data['name'].capitalize(), abs(diff.days)))
         if no_command:
             print("[ {0} ]".format(self.current_file))
             print("== Crop Info ==")
@@ -212,6 +220,7 @@ def main(argv):
     showp = subp.add_parser('show')
     showp.add_argument('-s', '--stage', action='store_true')
     showp.add_argument('-w', '--water', action='store_true')
+    showp.add_argument('-a', '--age', action='store_true')
 
     waterp = subp.add_parser('water')
     waterp.add_argument('-a', '--additives', type=str, action='append')
