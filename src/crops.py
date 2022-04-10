@@ -69,7 +69,7 @@ class CropsCommandProcessor(object):
     def execute(self, file):
         self.current_file = file
         self.load_crop_data()
-        if self.args.command == 'show':
+        if self.args.command == 'info':
             self.show_info(self.args.water, self.args.stage, self.args.age)
         elif self.args.command == 'water':
             self.water(self.args.additives, self.args.notes)
@@ -217,10 +217,10 @@ def main(argv):
     subp = argsp.add_subparsers(dest="command")
     newp = subp.add_parser('new')
 
-    showp = subp.add_parser('show')
-    showp.add_argument('-s', '--stage', action='store_true')
-    showp.add_argument('-w', '--water', action='store_true')
-    showp.add_argument('-a', '--age', action='store_true')
+    infop = subp.add_parser('info')
+    infop.add_argument('-s', '--stage', action='store_true')
+    infop.add_argument('-w', '--water', action='store_true')
+    infop.add_argument('-a', '--age', action='store_true')
 
     waterp = subp.add_parser('water')
     waterp.add_argument('-a', '--additives', type=str, action='append')
