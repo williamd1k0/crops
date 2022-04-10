@@ -16,10 +16,13 @@ source: Seeds
   18h30:
   - water:
       notes: Rain
-  - stage: ripening
+  - stage: flowering
 2022-04-01:
   15h24:
   - water
 2022-04-03:
   21h53:
-  - stage: harvested
+  - stage: ripening
+2022-04-10:
+  19h27:
+  - diary: Leaves are turning reddish-purple

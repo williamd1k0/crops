@@ -32,12 +32,15 @@ class CropsCommandProcessor(object):
         self.current_file = file
         self.load_crop_data()
         if self.args.command == 'info':
-            self.show_info(self.args.water, self.args.stage, self.args.age)
+            self.info(self.args.water, self.args.stage, self.args.age)
         elif self.args.command == 'water':
             self.water(self.args.additives, self.args.notes)
             self.save_changes()
         elif self.args.command == 'stage':
-            self.change_stage(self.args.stage)
+            self.stage(self.args.stage)
+            self.save_changes()
+        elif self.args.command == 'diary':
+            self.diary(self.args.diary)
             self.save_changes()
 
     @property
@@ -72,7 +75,7 @@ class CropsCommandProcessor(object):
     def crop_events(self):
         return self.crop_data[self.FILE_EVENTS]
 
-    def show_info(self, show_water=False, show_stage=False, show_age=False):
+    def info(self, show_water=False, show_stage=False, show_age=False):
         no_command = True
         events_data = self.crop_events
         info_data = self.crop_info
@@ -152,11 +155,17 @@ class CropsCommandProcessor(object):
         self.add_entry(entry_data)
         print(template.format(self.now_formatted, info_data['name']))
 
-    def change_stage(self, stage):
+    def stage(self, stage):
         info_data = self.crop_info
         entry_data = { 'stage': stage }
         self.add_entry(entry_data)
         print(_('[{0}] Stage of {1} set to {2}.').format(self.now_formatted, info_data['name'], stage))
+
+    def diary(self, diary_text):
+        info_data = self.crop_info
+        entry_data = { 'diary': diary_text }
+        self.add_entry(entry_data)
+        print(_('[{0}] Diary of {1}: {2}').format(self.now_formatted, info_data['name'], diary_text))
 
     def add_entry(self, data):
         date_key = self.now_date
@@ -227,11 +236,14 @@ def main(argv):
     water_args.add_argument('-a', '--additives', type=str, action='append')
     water_args.add_argument('-n', '--notes', type=str)
 
+    stage_args = sub_parser.add_parser('stage')
+    stage_args.add_argument('stage', choices=PLANT_STAGES[1:])
+
     feed_args = sub_parser.add_parser('feed')
     feed_args.add_argument('-n', '--notes', type=str)
 
-    stage_args = sub_parser.add_parser('stage')
-    stage_args.add_argument('stage', choices=PLANT_STAGES[1:])
+    diary_args = sub_parser.add_parser('diary')
+    diary_args.add_argument('diary', type=str)
 
     args, files = args_parser.parse_known_args(argv)
     global VERBOSE
