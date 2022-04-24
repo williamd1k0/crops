@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import sys, os
+import sys, os, re
 import argparse
 import gettext
-from datetime import date, datetime
+from datetime import date, time, datetime
 import yaml
 from yaml import Loader, Dumper
 
@@ -23,9 +23,25 @@ class CropsCommandProcessor(object):
     FILE_INFO, FILE_EVENTS = 0, 1
     crop_data = None
     current_file = None
+    now :datetime = None
 
     def __init__(self, args):
         self.now = datetime.now()
+        if args.date:
+            if type(args.date) == date:
+                now_time = self.now.time()
+                self.now = datetime(
+                    args.date.year, args.date.month, args.date.day,
+                    now_time.hour, now_time.minute, now_time.second, now_time.microsecond
+                )
+            elif type(args.date) == time:
+                now_date = self.now.date()
+                self.now = datetime(
+                    now_date.year, now_date.month, now_date.day,
+                    args.date.hour, args.date.minute, args.date.second, args.date.microsecond
+                )
+            elif type(args.date) == datetime:
+                self.now = args.date
         self.args = args
 
     def execute(self, file):
@@ -220,6 +236,19 @@ def new_crop(args, output):
             main(['stage', new_stage, path])
         print("New crop saved to: "+path)
 
+def datetime_override(datestr):
+        if re.match(_('\d{4}-\d{2}-\d{2}\.\d{2}:\d{2}'), datestr):
+            return datetime.strptime(datestr, _('%Y-%m-%d.%H:%M'))
+        elif re.match(_('\d{4}-\d{2}-\d{2}\.\d{2}:\d{2}:\d{2}'), datestr):
+            return datetime.strptime(datestr, _('%Y-%m-%d.%H:%M:%S'))
+        elif re.match(_('\d{4}-\d{2}-\d{2}'), datestr):
+            return datetime.strptime(datestr, _('%Y-%m-%d')).date()
+        elif re.match(_('\d{2}\:\d{2}'), datestr):
+            return datetime.strptime(datestr, _('%H:%M')).time()
+        elif re.match(_('\d{2}:\d{2}:\d{2}'), datestr):
+            return datetime.strptime(datestr, _('%H:%M:%S')).time()
+        return None
+
 def main(argv):
     args_parser = argparse.ArgumentParser(prog="crops")
     args_parser.add_argument('-v', action='store_true')
@@ -244,6 +273,10 @@ def main(argv):
 
     diary_args = sub_parser.add_parser('diary')
     diary_args.add_argument('diary', type=str)
+
+    can_override_datetime = water_args, stage_args, feed_args, diary_args
+    for dateargs in can_override_datetime:
+        dateargs.add_argument('-d', '--date', type=datetime_override, metavar='<default=now>')
 
     args, files = args_parser.parse_known_args(argv)
     global VERBOSE
