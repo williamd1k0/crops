@@ -27,7 +27,7 @@ class CropsCommandProcessor(object):
 
     def __init__(self, args):
         self.now = datetime.now()
-        if args.date:
+        if hasattr(args, 'date') and args.date:
             if type(args.date) == date:
                 now_time = self.now.time()
                 self.now = datetime(
