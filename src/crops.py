@@ -55,6 +55,9 @@ class CropsCommandProcessor(object):
         elif self.args.command == 'stage':
             self.stage(self.args.stage)
             self.save_changes()
+        elif self.args.command == 'feed':
+            self.feed(self.args.food, self.args.notes)
+            self.save_changes()
         elif self.args.command == 'diary':
             self.diary(self.args.diary)
             self.save_changes()
@@ -177,6 +180,23 @@ class CropsCommandProcessor(object):
         self.add_entry(entry_data)
         print(_('[{0}] Stage of {1} set to {2}.').format(self.now_formatted, info_data['name'], stage))
 
+    def feed(self, food=None, notes=None):
+        info_data = self.crop_info
+        template = _("[{0}] Feeding {1}.")
+        entry_data = None
+        if food is not None and food != '':
+            entry_data = { 'feed': { 'food': food } }
+            template = _("[{0}] Feeding {1} with {2}.").format('{0}', '{1}', food)
+        if notes is not None:
+            if entry_data is None:
+               entry_data = { 'feed': { 'notes': notes } }
+            else:
+                entry_data['feed']['notes'] = notes
+        if entry_data is None:
+            entry_data = 'feed'
+        self.add_entry(entry_data)
+        print(template.format(self.now_formatted, info_data['name']))
+
     def diary(self, diary_text):
         info_data = self.crop_info
         entry_data = { 'diary': diary_text }
@@ -269,6 +289,7 @@ def main(argv):
     stage_args.add_argument('stage', choices=PLANT_STAGES[1:])
 
     feed_args = sub_parser.add_parser('feed')
+    feed_args.add_argument('food', type=str)
     feed_args.add_argument('-n', '--notes', type=str)
 
     diary_args = sub_parser.add_parser('diary')
